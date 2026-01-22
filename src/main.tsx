@@ -11,14 +11,28 @@ const globalStyles = css`
         font-weight: normal;
         font-style: normal;
         font-display: swap;
+    }
 
-        box-sizing: border-box;
+    html,
+    body,
+    #root {
+        width: 100vw;
+        height: 100vh;
+        margin: 0;
+        padding: 0;
     }
 
     * {
         font-family: "Noto Sans KR";
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
+
+        box-sizing: border-box;
+    }
+
+    *:disabled {
+        opacity: 0.6;
+        pointer-events: none;
     }
 `
 
