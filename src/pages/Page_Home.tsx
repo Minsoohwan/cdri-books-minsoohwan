@@ -15,16 +15,24 @@ import {
 import closeIcon from "../assets/icon/close.svg"
 import { useState } from "react"
 import iconBook from "../assets/icon/iconBook.svg"
+import useDebounce from "../common/hooks/useDebounce"
+import { useBookSearch } from "../api/BookFetcher"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
 function Page_Home() {
     const [headerMenuActive, setHeaderMenuActive] = useState("all")
     const [searchValue, setSearchValue] = useState("")
-    const [totalCount] = useState(0)
     const [isDetailSearchOpen, setIsDetailSearchOpen] = useState(false)
     const [detailSearchTarget, setDetailSearchTarget] = useState("title")
     const [detailSearchQuery, setDetailSearchQuery] = useState("")
+
+    const debouncedSearchValue = useDebounce(searchValue, 500)
+    const { data: searchResult } = useBookSearch({
+        query: debouncedSearchValue,
+    })
+
+    const totalCount = searchResult?.meta.total_count ?? 0
 
     const headerMenuItems = [
         { id: "all", label: "전체 도서" },
