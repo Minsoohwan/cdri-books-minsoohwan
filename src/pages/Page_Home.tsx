@@ -28,16 +28,28 @@ function Page_Home() {
     const [isDetailSearchOpen, setIsDetailSearchOpen] = useState(false)
     const [detailSearchTarget, setDetailSearchTarget] = useState("title")
     const [detailSearchQuery, setDetailSearchQuery] = useState("")
+    const [isDetailSearchMode, setIsDetailSearchMode] = useState(false)
     const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
 
-    const debouncedSearchValue = useDebounce(searchValue, 500)
+    const debouncedSearchValue = useDebounce(searchValue, 300)
+    const debouncedDetailSearchQuery = useDebounce(detailSearchQuery, 300)
+
+    const searchQuery = isDetailSearchMode
+        ? debouncedDetailSearchQuery
+        : debouncedSearchValue
+
+    const searchTarget = isDetailSearchMode
+        ? (detailSearchTarget as "title" | "publisher" | "person")
+        : undefined
+
     const {
         data: searchResult,
         fetchNextPage,
         hasNextPage,
         isFetchingNextPage,
     } = useBookSearchInfinite({
-        query: debouncedSearchValue,
+        query: searchQuery,
+        target: searchTarget,
         size: 10,
     })
 
@@ -91,11 +103,17 @@ function Page_Home() {
                 <SearchPanelWrapper>
                     <SearchPanel
                         value={searchValue}
-                        onChange={(e) => setSearchValue(e.target.value)}
+                        onChange={(e) => {
+                            setSearchValue(e.target.value)
+                            setIsDetailSearchMode(false)
+                            setDetailSearchQuery("")
+                        }}
                         buttonConfig={{
                             text: "상세검색",
                             border: `1px solid ${colors.text.subtitle}`,
-                            onClick: () => setIsDetailSearchOpen(true),
+                            onClick: () => {
+                                setIsDetailSearchOpen(true)
+                            },
                         }}
                         buttonId={DETAIL_SEARCH_BUTTON_ID}
                         gap={12}
@@ -129,7 +147,7 @@ function Page_Home() {
                 </span>
             </SearchInfo>
             <SearchResult ref={searchResultRef} flex={1}>
-                {totalCount === 0 && debouncedSearchValue ? (
+                {totalCount === 0 ? (
                     <EmptyResult
                         alignItems="center"
                         justifyContent="center"
@@ -142,7 +160,9 @@ function Page_Home() {
                                 color: ${colors.text.secondary};
                             `}
                         >
-                            검색된 결과가 없습니다.
+                            {searchQuery
+                                ? "검색된 결과가 없습니다."
+                                : "검색을 해주세요."}
                         </span>
                     </EmptyResult>
                 ) : allBooks.length > 0 ? (
@@ -217,10 +237,8 @@ function Page_Home() {
                             height={40}
                             backgroundColor="primary"
                             onClick={() => {
-                                console.log("Search params:", {
-                                    target: detailSearchTarget,
-                                    query: detailSearchQuery,
-                                })
+                                setIsDetailSearchMode(true)
+                                setSearchValue("")
                                 setIsDetailSearchOpen(false)
                             }}
                         >

@@ -8,7 +8,7 @@ export interface BookSearchParams {
     sort?: "accuracy" | "latest" | "publish_time"
     page?: number
     size?: number
-    target?: "title" | "isbn" | "publisher" | "person"
+    target?: "title" | "publisher" | "person"
 }
 
 export interface BookSearchResponse {
