@@ -2,12 +2,12 @@ import styled from "@emotion/styled"
 import { css } from "@emotion/react"
 import { colors } from "../theme/colors"
 import { fonts } from "../theme/font"
-import PageCommon from "../common/components/PageCommon"
-import SearchPanel from "../common/components/SearchPanel"
+import PageCommon from "../common/layout/PageCommon"
+import SearchPanel from "../common/editor/SearchPanel"
 import Popover from "../common/components/Popover"
-import SelectBox from "../common/components/SelectBox"
-import { TextBox } from "../common/components/TextBox"
-import { Button } from "../common/components/Button"
+import SelectBox from "../common/editor/SelectBox"
+import { TextBox } from "../common/editor/TextBox"
+import { Button } from "../common/editor/Button"
 import {
     FlexRowContainer,
     FlexColumnContainer,

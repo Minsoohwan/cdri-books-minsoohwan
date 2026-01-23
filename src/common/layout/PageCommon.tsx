@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 import { colors } from "../../theme/colors"
 import { fonts } from "../../theme/font"
-import Menu from "./Menu"
+import Menu from "../components/Menu"
 import { FlexRowContainer, FlexColumnContainer } from "../style/FlexContainer"
 
 interface PageCommonProps {

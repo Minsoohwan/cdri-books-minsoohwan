@@ -6,7 +6,7 @@ import { FlexColumnContainer } from "../common/style/FlexContainer"
 import iconBook from "../assets/icon/iconBook.svg"
 import BookList from "../common/components/BookList"
 import { useState } from "react"
-import PageCommon from "../common/components/PageCommon"
+import PageCommon from "../common/layout/PageCommon"
 import type { BookSearchResponse } from "../api/BookFetcher"
 
 function Page_LikedBooks() {

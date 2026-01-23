@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 import { colors } from "../../theme/colors"
 import { fonts } from "../../theme/font"
-import { Button } from "./Button"
+import { Button } from "../editor/Button"
 import { FlexRowContainer, FlexColumnContainer } from "../style/FlexContainer"
 import chevronIcon from "../../assets/icon/chevron.svg"
 import heartFillIcon from "../../assets/icon/heart_fill.svg"
