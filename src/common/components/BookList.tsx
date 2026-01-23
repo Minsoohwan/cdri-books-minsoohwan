@@ -82,6 +82,9 @@ function BookList({ books, likedBooks, onToggleLike }: BookListProps) {
                                             width={80}
                                             height={36}
                                             backgroundColor="primary"
+                                            onClick={() => {
+                                                window.open(book.url, "_blank")
+                                            }}
                                         >
                                             구매하기
                                         </Button>
@@ -216,6 +219,9 @@ function BookList({ books, likedBooks, onToggleLike }: BookListProps) {
                                         width={178}
                                         height={36}
                                         backgroundColor="primary"
+                                        onClick={() => {
+                                            window.open(book.url, "_blank")
+                                        }}
                                     >
                                         구매하기
                                     </Button>
