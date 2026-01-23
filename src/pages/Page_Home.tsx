@@ -17,15 +17,17 @@ import { useState } from "react"
 import iconBook from "../assets/icon/iconBook.svg"
 import useDebounce from "../common/hooks/useDebounce"
 import { useBookSearch } from "../api/BookFetcher"
+import BookList from "../common/components/BookList"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
 function Page_Home() {
-    const [headerMenuActive, setHeaderMenuActive] = useState("all")
+    const [currentMenu, setCurrentMenu] = useState("search")
     const [searchValue, setSearchValue] = useState("")
     const [isDetailSearchOpen, setIsDetailSearchOpen] = useState(false)
     const [detailSearchTarget, setDetailSearchTarget] = useState("title")
     const [detailSearchQuery, setDetailSearchQuery] = useState("")
+    const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
 
     const debouncedSearchValue = useDebounce(searchValue, 500)
     const { data: searchResult } = useBookSearch({
@@ -35,9 +37,8 @@ function Page_Home() {
     const totalCount = searchResult?.meta.total_count ?? 0
 
     const headerMenuItems = [
-        { id: "all", label: "전체 도서" },
-        { id: "library", label: "내 서재" },
-        { id: "read", label: "내가 읽은 책" },
+        { id: "search", label: "도서 검색" },
+        { id: "like", label: "내가 찜한 책" },
     ]
 
     return (
@@ -46,8 +47,8 @@ function Page_Home() {
                 <Logo>CERTICOS BOOKS</Logo>
                 <Menu
                     items={headerMenuItems}
-                    activeItemId={headerMenuActive}
-                    onItemClick={setHeaderMenuActive}
+                    activeItemId={currentMenu}
+                    onItemClick={setCurrentMenu}
                 />
             </Header>
             <SearchWrapper>
@@ -92,8 +93,8 @@ function Page_Home() {
                     건
                 </span>
             </SearchInfo>
-            <SearchResult justifyContent="center" alignItems="center" flex={1}>
-                {totalCount === 0 ? (
+            <SearchResult flex={1}>
+                {totalCount === 0 && debouncedSearchValue ? (
                     <EmptyResult
                         alignItems="center"
                         justifyContent="center"
@@ -109,9 +110,23 @@ function Page_Home() {
                             검색된 결과가 없습니다.
                         </span>
                     </EmptyResult>
-                ) : (
-                    <span>검색된 결과가 있습니다.</span>
-                )}
+                ) : searchResult?.documents ? (
+                    <BookList
+                        books={searchResult.documents}
+                        likedBooks={likedBooks}
+                        onToggleLike={(isbn) => {
+                            setLikedBooks((prev) => {
+                                const newSet = new Set(prev)
+                                if (newSet.has(isbn)) {
+                                    newSet.delete(isbn)
+                                } else {
+                                    newSet.add(isbn)
+                                }
+                                return newSet
+                            })
+                        }}
+                    />
+                ) : null}
             </SearchResult>
             <Popover
                 isOpen={isDetailSearchOpen}
@@ -187,7 +202,7 @@ const Header = styled(FlexRowContainer)<{
     margin-bottom: 60px;
 `
 
-const Logo = styled.h1`
+const Logo = styled.div`
     ${fonts.title1}
     color: ${colors.text.primary};
     margin: 0;
@@ -197,7 +212,7 @@ const SearchWrapper = styled(FlexColumnContainer)`
     width: 100%;
 `
 
-const SearchTitle = styled.h2`
+const SearchTitle = styled.div`
     ${fonts.title3}
     color: ${colors.text.primary};
     margin: 0;
@@ -212,8 +227,9 @@ const SearchInfo = styled(FlexRowContainer)`
     margin-bottom: 36px;
 `
 
-const SearchResult = styled(FlexRowContainer)`
+const SearchResult = styled(FlexColumnContainer)`
     width: 100%;
+    overflow-y: auto;
 `
 const EmptyResult = styled(FlexColumnContainer)``
 
