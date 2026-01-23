@@ -3,18 +3,26 @@ import { colors } from "../../theme/colors"
 import { fonts } from "../../theme/font"
 import Menu from "../components/Menu"
 import { FlexRowContainer, FlexColumnContainer } from "../style/FlexContainer"
+import { useNavigate, useLocation } from "react-router-dom"
 
 interface PageCommonProps {
     children: React.ReactNode
-    currentMenu: string
-    onMenuClick: (menuId: string) => void
 }
 
-function PageCommon({ children, currentMenu, onMenuClick }: PageCommonProps) {
+function PageCommon({ children }: PageCommonProps) {
+    const navigate = useNavigate()
+    const location = useLocation()
+
     const headerMenuItems = [
-        { id: "search", label: "도서 검색" },
-        { id: "like", label: "내가 찜한 책" },
+        { id: "/", label: "도서 검색" },
+        { id: "/liked", label: "내가 찜한 책" },
     ]
+
+    const currentMenu = location.pathname
+
+    const onMenuClick = (menuId: string) => {
+        navigate(menuId)
+    }
 
     return (
         <PageContainer>
