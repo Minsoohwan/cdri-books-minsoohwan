@@ -1,7 +1,7 @@
 import styled from "@emotion/styled"
 import { colors } from "../../theme/colors"
 import { fonts } from "../../theme/font"
-import { type ReactNode, useState, useRef, useEffect, useId } from "react"
+import { type ReactNode, useState, useRef, useId } from "react"
 import chevronIcon from "../../assets/icon/chevron.svg"
 import { FlexRowContainer, FlexColumnContainer } from "../style/FlexContainer"
 import Popover from "./Popover"
@@ -39,33 +39,16 @@ function SelectBox({
         }
     }
 
-    const onOptionClick = (optionValue: string) => {
+    const onOptionClick = (optionValue: string, event?: React.MouseEvent) => {
+        if (event) {
+            event.stopPropagation()
+            event.preventDefault()
+        }
         onChange(optionValue)
         if (!isControlled) {
             setInternalIsOpen(false)
         }
     }
-
-    useEffect(() => {
-        const onOutsideClick = (event: MouseEvent) => {
-            if (
-                selectRef.current &&
-                !selectRef.current.contains(event.target as Node)
-            ) {
-                if (!isControlled) {
-                    setInternalIsOpen(false)
-                }
-            }
-        }
-
-        if (isOpen) {
-            document.addEventListener("mousedown", onOutsideClick)
-        }
-
-        return () => {
-            document.removeEventListener("mousedown", onOutsideClick)
-        }
-    }, [isOpen, isControlled])
 
     return (
         <Container width={width} ref={selectRef}>
@@ -102,7 +85,7 @@ function SelectBox({
                             <OptionItem
                                 key={option.value}
                                 isSelected={option.value === value}
-                                onClick={() => onOptionClick(option.value)}
+                                onClick={(e) => onOptionClick(option.value, e)}
                                 disabled={option.disabled}
                             >
                                 {option.label}
