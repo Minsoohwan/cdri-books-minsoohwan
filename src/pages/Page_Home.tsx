@@ -2,7 +2,7 @@ import styled from "@emotion/styled"
 import { css } from "@emotion/react"
 import { colors } from "../theme/colors"
 import { fonts } from "../theme/font"
-import Menu from "../common/components/Menu"
+import PageCommon from "../common/components/PageCommon"
 import SearchPanel from "../common/components/SearchPanel"
 import Popover from "../common/components/Popover"
 import SelectBox from "../common/components/SelectBox"
@@ -83,21 +83,8 @@ function Page_Home() {
         }
     }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
-    const headerMenuItems = [
-        { id: "search", label: "도서 검색" },
-        { id: "like", label: "내가 찜한 책" },
-    ]
-
     return (
-        <PageContainer>
-            <Header justifyContent="space-between" alignItems="center">
-                <Logo>CERTICOS BOOKS</Logo>
-                <Menu
-                    items={headerMenuItems}
-                    activeItemId={currentMenu}
-                    onItemClick={setCurrentMenu}
-                />
-            </Header>
+        <PageCommon currentMenu={currentMenu} onMenuClick={setCurrentMenu}>
             <SearchWrapper>
                 <SearchTitle>도서 검색</SearchTitle>
                 <SearchPanelWrapper>
@@ -247,32 +234,11 @@ function Page_Home() {
                     </ContentContainer>
                 </DetailSearchContent>
             </Popover>
-        </PageContainer>
+        </PageCommon>
     )
 }
 
 export default Page_Home
-
-const PageContainer = styled(FlexColumnContainer)`
-    width: 100%;
-    height: 100%;
-    background-color: ${colors.palette.white};
-    padding: 0 24px;
-`
-
-const Header = styled(FlexRowContainer)<{
-    justifyContent?: "space-between"
-    alignItems?: "center"
-}>`
-    height: 80px;
-    margin-bottom: 60px;
-`
-
-const Logo = styled.div`
-    ${fonts.title1}
-    color: ${colors.text.primary};
-    margin: 0;
-`
 
 const SearchWrapper = styled(FlexColumnContainer)`
     width: 100%;
