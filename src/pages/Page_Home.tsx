@@ -199,9 +199,8 @@ function Page_Home() {
                                 }
                                 options={[
                                     { value: "title", label: "제목" },
-                                    { value: "isbn", label: "ISBN" },
                                     { value: "publisher", label: "출판사" },
-                                    { value: "person", label: "저자" },
+                                    { value: "person", label: "저자명" },
                                 ]}
                             />
                             <TextBox

@@ -16,7 +16,7 @@ export const TextBox = styled.input<{
     padding: 0 8px;
 
     border: none;
-    border-bottom: 1px solid ${colors.palette.primary};
+    border-bottom: 1px solid ${colors.palette.black};
 
     background-color: transparent;
     color: ${colors.text.primary};

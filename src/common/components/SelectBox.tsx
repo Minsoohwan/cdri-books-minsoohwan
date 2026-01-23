@@ -157,6 +157,7 @@ const SelectButton = styled.button<{ height?: string | number }>`
 const SelectText = styled.span`
     flex: 1;
     text-align: left;
+    font-weight: 700;
 `
 
 const ChevronIcon = styled.img<{ isOpen?: boolean }>`
