@@ -1,5 +1,5 @@
 import axios from "axios"
-import { useQuery } from "@tanstack/react-query"
+import { useInfiniteQuery } from "@tanstack/react-query"
 
 const KAKAO_API_BASE_URL = "https://dapi.kakao.com/v3/search/book"
 
@@ -58,10 +58,18 @@ export async function searchBooks(
     return response.data
 }
 
-export function useBookSearch(params: BookSearchParams) {
-    return useQuery({
-        queryKey: ["bookSearch", params],
-        queryFn: () => searchBooks(params),
+export function useBookSearchInfinite(params: Omit<BookSearchParams, "page">) {
+    return useInfiniteQuery({
+        queryKey: ["bookSearchInfinite", params],
+        queryFn: ({ pageParam = 1 }) =>
+            searchBooks({ ...params, page: pageParam }),
         enabled: !!params.query,
+        getNextPageParam: (lastPage, allPages) => {
+            if (lastPage.meta.is_end) {
+                return undefined
+            }
+            return allPages.length + 1
+        },
+        initialPageParam: 1,
     })
 }

@@ -16,8 +16,9 @@ import closeIcon from "../assets/icon/close.svg"
 import { useState } from "react"
 import iconBook from "../assets/icon/iconBook.svg"
 import useDebounce from "../common/hooks/useDebounce"
-import { useBookSearch } from "../api/BookFetcher"
+import { useBookSearchInfinite } from "../api/BookFetcher"
 import BookList from "../common/components/BookList"
+import { useEffect, useRef } from "react"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
@@ -30,11 +31,45 @@ function Page_Home() {
     const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
 
     const debouncedSearchValue = useDebounce(searchValue, 500)
-    const { data: searchResult } = useBookSearch({
+    const {
+        data: searchResult,
+        fetchNextPage,
+        hasNextPage,
+        isFetchingNextPage,
+    } = useBookSearchInfinite({
         query: debouncedSearchValue,
+        size: 10,
     })
 
-    const totalCount = searchResult?.meta.total_count ?? 0
+    const searchResultRef = useRef<HTMLDivElement>(null)
+
+    const allBooks = searchResult?.pages.flatMap((page) => page.documents) ?? []
+    const totalCount = searchResult?.pages[0]?.meta.total_count ?? 0
+
+    useEffect(() => {
+        const handleScroll = () => {
+            if (!searchResultRef.current) return
+
+            const { scrollTop, scrollHeight, clientHeight } =
+                searchResultRef.current
+
+            if (
+                scrollHeight - scrollTop - clientHeight < 200 &&
+                hasNextPage &&
+                !isFetchingNextPage
+            ) {
+                fetchNextPage()
+            }
+        }
+
+        const scrollElement = searchResultRef.current
+        if (scrollElement) {
+            scrollElement.addEventListener("scroll", handleScroll)
+            return () => {
+                scrollElement.removeEventListener("scroll", handleScroll)
+            }
+        }
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
 
     const headerMenuItems = [
         { id: "search", label: "도서 검색" },
@@ -93,7 +128,7 @@ function Page_Home() {
                     건
                 </span>
             </SearchInfo>
-            <SearchResult flex={1}>
+            <SearchResult ref={searchResultRef} flex={1}>
                 {totalCount === 0 && debouncedSearchValue ? (
                     <EmptyResult
                         alignItems="center"
@@ -110,22 +145,36 @@ function Page_Home() {
                             검색된 결과가 없습니다.
                         </span>
                     </EmptyResult>
-                ) : searchResult?.documents ? (
-                    <BookList
-                        books={searchResult.documents}
-                        likedBooks={likedBooks}
-                        onToggleLike={(isbn) => {
-                            setLikedBooks((prev) => {
-                                const newSet = new Set(prev)
-                                if (newSet.has(isbn)) {
-                                    newSet.delete(isbn)
-                                } else {
-                                    newSet.add(isbn)
-                                }
-                                return newSet
-                            })
-                        }}
-                    />
+                ) : allBooks.length > 0 ? (
+                    <>
+                        <BookList
+                            books={allBooks}
+                            likedBooks={likedBooks}
+                            onToggleLike={(isbn) => {
+                                setLikedBooks((prev) => {
+                                    const newSet = new Set(prev)
+                                    if (newSet.has(isbn)) {
+                                        newSet.delete(isbn)
+                                    } else {
+                                        newSet.add(isbn)
+                                    }
+                                    return newSet
+                                })
+                            }}
+                        />
+                        {isFetchingNextPage && (
+                            <LoadingText
+                                css={css`
+                                    ${fonts.caption}
+                                    color: ${colors.text.secondary};
+                                    text-align: center;
+                                    padding: 20px;
+                                `}
+                            >
+                                로딩 중...
+                            </LoadingText>
+                        )}
+                    </>
                 ) : null}
             </SearchResult>
             <Popover
@@ -232,6 +281,8 @@ const SearchResult = styled(FlexColumnContainer)`
     overflow-y: auto;
 `
 const EmptyResult = styled(FlexColumnContainer)``
+
+const LoadingText = styled.div``
 
 const DetailSearchContent = styled.div`
     position: relative;
