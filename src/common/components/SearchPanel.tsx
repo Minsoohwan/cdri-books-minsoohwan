@@ -16,6 +16,7 @@ interface SearchPanelProps {
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
     buttonConfig?: ButtonConfig
     gap?: string | number
+    buttonId?: string
 }
 
 function SearchPanel({
@@ -24,6 +25,7 @@ function SearchPanel({
     onChange,
     buttonConfig,
     gap = "16px",
+    buttonId,
 }: SearchPanelProps) {
     return (
         <Panel
@@ -40,6 +42,7 @@ function SearchPanel({
             </SearchWrapper>
             {buttonConfig && (
                 <Button
+                    id={buttonId}
                     width={buttonConfig.width ?? 72}
                     height={buttonConfig.height ?? 35}
                     backgroundColor={buttonConfig.backgroundColor ?? "white"}

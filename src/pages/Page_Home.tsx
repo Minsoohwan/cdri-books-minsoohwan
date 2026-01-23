@@ -4,17 +4,27 @@ import { colors } from "../theme/colors"
 import { fonts } from "../theme/font"
 import Menu from "../common/components/Menu"
 import SearchPanel from "../common/components/SearchPanel"
-import { useState } from "react"
-import iconBook from "../assets/icon/iconBook.svg"
+import Popover from "../common/components/Popover"
+import SelectBox from "../common/components/SelectBox"
+import { TextBox } from "../common/components/TextBox"
+import { Button } from "../common/components/Button"
 import {
     FlexRowContainer,
     FlexColumnContainer,
 } from "../common/style/FlexContainer"
+import closeIcon from "../assets/icon/close.svg"
+import { useState } from "react"
+import iconBook from "../assets/icon/iconBook.svg"
+
+const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
 function Page_Home() {
     const [headerMenuActive, setHeaderMenuActive] = useState("all")
     const [searchValue, setSearchValue] = useState("")
     const [totalCount] = useState(0)
+    const [isDetailSearchOpen, setIsDetailSearchOpen] = useState(false)
+    const [detailSearchTarget, setDetailSearchTarget] = useState("title")
+    const [detailSearchQuery, setDetailSearchQuery] = useState("")
 
     const headerMenuItems = [
         { id: "all", label: "전체 도서" },
@@ -41,7 +51,9 @@ function Page_Home() {
                         buttonConfig={{
                             text: "상세검색",
                             border: `1px solid ${colors.text.subtitle}`,
+                            onClick: () => setIsDetailSearchOpen(true),
                         }}
+                        buttonId={DETAIL_SEARCH_BUTTON_ID}
                         gap={12}
                     />
                 </SearchPanelWrapper>
@@ -93,6 +105,59 @@ function Page_Home() {
                     <span>검색된 결과가 있습니다.</span>
                 )}
             </SearchResult>
+            <Popover
+                isOpen={isDetailSearchOpen}
+                onClose={() => setIsDetailSearchOpen(false)}
+                target={`#${DETAIL_SEARCH_BUTTON_ID}`}
+                position={{ target: "bottom", align: "start" }}
+                closeOnOutsideClick={true}
+            >
+                <DetailSearchContent>
+                    <CloseButton onClick={() => setIsDetailSearchOpen(false)}>
+                        <CloseIcon src={closeIcon} alt="close" />
+                    </CloseButton>
+                    <ContentContainer gap={24}>
+                        <SearchRow gap={16} alignItems="flex-end">
+                            <SelectBox
+                                width={120}
+                                label="제목"
+                                value={detailSearchTarget}
+                                onChange={(value) =>
+                                    setDetailSearchTarget(value)
+                                }
+                                options={[
+                                    { value: "title", label: "제목" },
+                                    { value: "isbn", label: "ISBN" },
+                                    { value: "publisher", label: "출판사" },
+                                    { value: "person", label: "저자" },
+                                ]}
+                            />
+                            <TextBox
+                                width="100%"
+                                placeholder="검색어 입력"
+                                value={detailSearchQuery}
+                                onChange={(e) =>
+                                    setDetailSearchQuery(e.target.value)
+                                }
+                            />
+                        </SearchRow>
+                        <Button
+                            width="100%"
+                            height={40}
+                            backgroundColor="primary"
+                            onClick={() => {
+                                console.log("Search params:", {
+                                    target: detailSearchTarget,
+                                    query: detailSearchQuery,
+                                })
+                                setIsDetailSearchOpen(false)
+                            }}
+                        >
+                            검색하기
+                        </Button>
+                    </ContentContainer>
+                </DetailSearchContent>
+            </Popover>
         </PageContainer>
     )
 }
@@ -143,3 +208,37 @@ const SearchResult = styled(FlexRowContainer)`
     width: 100%;
 `
 const EmptyResult = styled(FlexColumnContainer)``
+
+const DetailSearchContent = styled.div`
+    position: relative;
+    width: 480px;
+    padding: 24px;
+`
+
+const CloseButton = styled.button`
+    position: absolute;
+    top: 16px;
+    right: 16px;
+
+    padding: 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+
+    &:hover {
+        opacity: 0.7;
+    }
+`
+
+const CloseIcon = styled.img`
+    width: 12px;
+    height: 12px;
+`
+
+const ContentContainer = styled(FlexColumnContainer)`
+    width: 100%;
+`
+
+const SearchRow = styled(FlexRowContainer)`
+    width: 100%;
+`

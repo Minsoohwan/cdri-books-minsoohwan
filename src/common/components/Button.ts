@@ -33,7 +33,15 @@ export const Button = styled.button<ButtonProps>`
 
     background-color: ${({ backgroundColor = "gray" }) =>
         colors.palette[backgroundColor]};
-    color: ${({ textColor = "primary" }) => colors.text[textColor]};
+    color: ${({ textColor, backgroundColor = "gray" }) => {
+        if (textColor) {
+            return colors.text[textColor]
+        }
+        if (backgroundColor === "primary") {
+            return colors.palette.white
+        }
+        return colors.text.primary
+    }};
 
     cursor: ${({ disabled }) => (disabled ? "not-allowed" : "pointer")};
     transition: all 0.2s;
