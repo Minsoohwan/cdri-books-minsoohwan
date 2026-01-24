@@ -1,35 +1,45 @@
 import styled from "@emotion/styled"
-import { css } from "@emotion/react"
 import { colors } from "../theme/colors"
 import { fonts } from "../theme/font"
-import Menu from "../common/components/Menu"
-import SearchPanel from "../common/components/SearchPanel"
+import PageCommon from "../common/layout/PageCommon"
+import SearchPanel from "../common/editor/SearchPanel"
 import Popover from "../common/components/Popover"
-import SelectBox from "../common/components/SelectBox"
-import { TextBox } from "../common/components/TextBox"
-import { Button } from "../common/components/Button"
+import SelectBox from "../common/editor/SelectBox"
+import { TextBox } from "../common/editor/TextBox"
+import { Button } from "../common/editor/Button"
 import {
     FlexRowContainer,
     FlexColumnContainer,
 } from "../common/style/FlexContainer"
 import closeIcon from "../assets/icon/close.svg"
-import { useState } from "react"
-import iconBook from "../assets/icon/iconBook.svg"
+import { useState, useEffect } from "react"
 import useDebounce from "../common/hooks/useDebounce"
 import { useBookSearchInfinite } from "../api/BookFetcher"
-import BookList from "../common/components/BookList"
-import { useEffect, useRef } from "react"
+import SearchResultSection from "../common/components/SearchResultSection"
+import {
+    useLikedBooks,
+    useAddLikedBook,
+    useRemoveLikedBook,
+} from "../api/mock/likedBooksFetcher"
+import {
+    addSearchHistory,
+    useInvalidateSearchHistory,
+} from "../api/mock/searchHistoryFetcher"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
 function Page_Home() {
-    const [currentMenu, setCurrentMenu] = useState("search")
     const [searchValue, setSearchValue] = useState("")
     const [isDetailSearchOpen, setIsDetailSearchOpen] = useState(false)
     const [detailSearchTarget, setDetailSearchTarget] = useState("title")
     const [detailSearchQuery, setDetailSearchQuery] = useState("")
     const [isDetailSearchMode, setIsDetailSearchMode] = useState(false)
-    const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
+    
+    const { data: likedBooksData } = useLikedBooks()
+    const likedBooks = new Set(likedBooksData?.isbns ?? [])
+    const addLikedBookMutation = useAddLikedBook()
+    const removeLikedBookMutation = useRemoveLikedBook()
+    const invalidateSearchHistory = useInvalidateSearchHistory()
 
     const debouncedSearchValue = useDebounce(searchValue, 300)
     const debouncedDetailSearchQuery = useDebounce(detailSearchQuery, 300)
@@ -53,51 +63,28 @@ function Page_Home() {
         size: 10,
     })
 
-    const searchResultRef = useRef<HTMLDivElement>(null)
-
     const allBooks = searchResult?.pages.flatMap((page) => page.documents) ?? []
     const totalCount = searchResult?.pages[0]?.meta.total_count ?? 0
 
     useEffect(() => {
-        const handleScroll = () => {
-            if (!searchResultRef.current) return
-
-            const { scrollTop, scrollHeight, clientHeight } =
-                searchResultRef.current
-
-            if (
-                scrollHeight - scrollTop - clientHeight < 200 &&
-                hasNextPage &&
-                !isFetchingNextPage
-            ) {
-                fetchNextPage()
+        if (
+            searchQuery &&
+            searchResult &&
+            searchResult.pages.length > 0 &&
+            !isFetchingNextPage
+        ) {
+            const currentPage =
+                searchResult.pages[searchResult.pages.length - 1]
+            if (currentPage && currentPage.documents.length > 0) {
+                addSearchHistory(searchQuery).then(() => {
+                    invalidateSearchHistory()
+                })
             }
         }
-
-        const scrollElement = searchResultRef.current
-        if (scrollElement) {
-            scrollElement.addEventListener("scroll", handleScroll)
-            return () => {
-                scrollElement.removeEventListener("scroll", handleScroll)
-            }
-        }
-    }, [hasNextPage, isFetchingNextPage, fetchNextPage])
-
-    const headerMenuItems = [
-        { id: "search", label: "도서 검색" },
-        { id: "like", label: "내가 찜한 책" },
-    ]
+    }, [searchQuery, searchResult, isFetchingNextPage, invalidateSearchHistory])
 
     return (
-        <PageContainer>
-            <Header justifyContent="space-between" alignItems="center">
-                <Logo>CERTICOS BOOKS</Logo>
-                <Menu
-                    items={headerMenuItems}
-                    activeItemId={currentMenu}
-                    onItemClick={setCurrentMenu}
-                />
-            </Header>
+        <PageCommon>
             <SearchWrapper>
                 <SearchTitle>도서 검색</SearchTitle>
                 <SearchPanelWrapper>
@@ -105,6 +92,11 @@ function Page_Home() {
                         value={searchValue}
                         onChange={(e) => {
                             setSearchValue(e.target.value)
+                            setIsDetailSearchMode(false)
+                            setDetailSearchQuery("")
+                        }}
+                        onHistoryClick={(query) => {
+                            setSearchValue(query)
                             setIsDetailSearchMode(false)
                             setDetailSearchQuery("")
                         }}
@@ -120,83 +112,27 @@ function Page_Home() {
                     />
                 </SearchPanelWrapper>
             </SearchWrapper>
-            <SearchInfo gap={16} alignItems="center">
-                <span
-                    css={css`
-                        ${fonts.caption}
-                        color: ${colors.text.primary};
-                    `}
-                >
-                    도서 검색 결과
-                </span>
-                <span
-                    css={css`
-                        ${fonts.caption}
-                        color: ${colors.text.primary};
-                    `}
-                >
-                    총{" "}
-                    <span
-                        css={css`
-                            color: ${colors.palette.primary};
-                        `}
-                    >
-                        {totalCount}
-                    </span>
-                    건
-                </span>
-            </SearchInfo>
-            <SearchResult ref={searchResultRef} flex={1}>
-                {totalCount === 0 ? (
-                    <EmptyResult
-                        alignItems="center"
-                        justifyContent="center"
-                        gap={40}
-                    >
-                        <img src={iconBook} alt="empty state" />
-                        <span
-                            css={css`
-                                ${fonts.caption}
-                                color: ${colors.text.secondary};
-                            `}
-                        >
-                            {searchQuery
-                                ? "검색된 결과가 없습니다."
-                                : "검색을 해주세요."}
-                        </span>
-                    </EmptyResult>
-                ) : allBooks.length > 0 ? (
-                    <>
-                        <BookList
-                            books={allBooks}
-                            likedBooks={likedBooks}
-                            onToggleLike={(isbn) => {
-                                setLikedBooks((prev) => {
-                                    const newSet = new Set(prev)
-                                    if (newSet.has(isbn)) {
-                                        newSet.delete(isbn)
-                                    } else {
-                                        newSet.add(isbn)
-                                    }
-                                    return newSet
-                                })
-                            }}
-                        />
-                        {isFetchingNextPage && (
-                            <LoadingText
-                                css={css`
-                                    ${fonts.caption}
-                                    color: ${colors.text.secondary};
-                                    text-align: center;
-                                    padding: 20px;
-                                `}
-                            >
-                                로딩 중...
-                            </LoadingText>
-                        )}
-                    </>
-                ) : null}
-            </SearchResult>
+            <SearchResultSection
+                type="search"
+                totalCount={totalCount}
+                searchQuery={searchQuery}
+                allBooks={allBooks}
+                likedBooks={likedBooks}
+                onToggleLike={async (isbn) => {
+                    const book = allBooks.find((b) => b.isbn === isbn)
+                    if (book) {
+                        const isCurrentlyLiked = likedBooks.has(isbn)
+                        if (isCurrentlyLiked) {
+                            await removeLikedBookMutation.mutateAsync(isbn)
+                        } else {
+                            await addLikedBookMutation.mutateAsync(book)
+                        }
+                    }
+                }}
+                hasNextPage={hasNextPage}
+                isFetchingNextPage={isFetchingNextPage}
+                fetchNextPage={fetchNextPage}
+            />
             <Popover
                 isOpen={isDetailSearchOpen}
                 onClose={() => setIsDetailSearchOpen(false)}
@@ -247,32 +183,11 @@ function Page_Home() {
                     </ContentContainer>
                 </DetailSearchContent>
             </Popover>
-        </PageContainer>
+        </PageCommon>
     )
 }
 
 export default Page_Home
-
-const PageContainer = styled(FlexColumnContainer)`
-    width: 100%;
-    height: 100%;
-    background-color: ${colors.palette.white};
-    padding: 0 24px;
-`
-
-const Header = styled(FlexRowContainer)<{
-    justifyContent?: "space-between"
-    alignItems?: "center"
-}>`
-    height: 80px;
-    margin-bottom: 60px;
-`
-
-const Logo = styled.div`
-    ${fonts.title1}
-    color: ${colors.text.primary};
-    margin: 0;
-`
 
 const SearchWrapper = styled(FlexColumnContainer)`
     width: 100%;
@@ -281,25 +196,11 @@ const SearchWrapper = styled(FlexColumnContainer)`
 const SearchTitle = styled.div`
     ${fonts.title3}
     color: ${colors.text.primary};
-    margin: 0;
 `
 
 const SearchPanelWrapper = styled.div`
     margin-top: 16px;
 `
-
-const SearchInfo = styled(FlexRowContainer)`
-    margin-top: 24px;
-    margin-bottom: 36px;
-`
-
-const SearchResult = styled(FlexColumnContainer)`
-    width: 100%;
-    overflow-y: auto;
-`
-const EmptyResult = styled(FlexColumnContainer)``
-
-const LoadingText = styled.div``
 
 const DetailSearchContent = styled.div`
     position: relative;

@@ -4,7 +4,7 @@ import { fonts } from "../../theme/font"
 import { type ReactNode, useState, useRef, useId } from "react"
 import chevronIcon from "../../assets/icon/chevron.svg"
 import { FlexRowContainer, FlexColumnContainer } from "../style/FlexContainer"
-import Popover from "./Popover"
+import Popover from "../components/Popover"
 
 interface SelectBoxProps {
     width?: string | number
