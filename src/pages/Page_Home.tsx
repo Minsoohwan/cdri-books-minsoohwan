@@ -74,15 +74,10 @@ function Page_Home() {
             const currentPage =
                 searchResult.pages[searchResult.pages.length - 1]
             if (currentPage && currentPage.documents.length > 0) {
-                addSearchHistory(
-                    searchQuery,
-                    searchTarget,
-                    currentPage.documents,
-                    currentPage.meta.total_count
-                )
+                addSearchHistory(searchQuery)
             }
         }
-    }, [searchQuery, searchTarget, searchResult, isFetchingNextPage])
+    }, [searchQuery, searchResult, isFetchingNextPage])
 
     return (
         <PageCommon>
