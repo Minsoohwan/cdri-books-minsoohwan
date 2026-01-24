@@ -1,6 +1,6 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
-import { readFileSync, writeFileSync } from "fs"
+import { writeFileSync } from "fs"
 import { join } from "path"
 
 // https://vitejs.dev/config/
@@ -50,7 +50,11 @@ export default defineConfig({
                             } catch (error) {
                                 console.error("Error writing JSON file:", error)
                                 res.writeHead(500)
-                                res.end(JSON.stringify({ error: "Failed to write file" }))
+                                res.end(
+                                    JSON.stringify({
+                                        error: "Failed to write file",
+                                    })
+                                )
                             }
                         })
                     } else {
