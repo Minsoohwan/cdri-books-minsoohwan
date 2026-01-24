@@ -76,25 +76,26 @@ function SearchPanel({
                     }
                 }}
             >
-                <SearchIcon src={searchIcon} alt="" />
-                <SearchTextBox
-                    placeholder={placeholder}
-                    value={value}
-                    onChange={onChange}
-                    onFocus={() => setIsFocused(true)}
-                    onBlur={() => {
-                        // Delay to allow clicking on history items
-                        setTimeout(() => {
-                            if (
-                                !wrapperRef.current?.contains(
-                                    document.activeElement
-                                )
-                            ) {
-                                setIsFocused(false)
-                            }
-                        }, 200)
-                    }}
-                />
+                <SearchContainer hasHistory={showHistory}>
+                    <SearchIcon src={searchIcon} alt="" />
+                    <SearchTextBox
+                        placeholder={placeholder}
+                        value={value}
+                        onChange={onChange}
+                        onFocus={() => setIsFocused(true)}
+                        onBlur={() => {
+                            setTimeout(() => {
+                                if (
+                                    !wrapperRef.current?.contains(
+                                        document.activeElement
+                                    )
+                                ) {
+                                    setIsFocused(false)
+                                }
+                            }, 200)
+                        }}
+                    />
+                </SearchContainer>
                 {showHistory && (
                     <HistoryContainer>
                         {historyItems.map((item) => (
@@ -150,6 +151,15 @@ const SearchWrapper = styled.div`
     flex: 1;
 `
 
+const SearchContainer = styled.div<{ hasHistory: boolean }>`
+    border-radius: ${({ hasHistory }) =>
+        hasHistory ? "18px 18px 0 0" : "18px"};
+    background-color: ${colors.palette.lightGray};
+
+    position: relative;
+    width: 100%;
+`
+
 const SearchIcon = styled.img`
     position: absolute;
     left: 0.75em;
@@ -171,9 +181,7 @@ const SearchTextBox = styled.input`
     text-indent: 2em;
 
     border: none;
-
-    background-color: ${colors.palette.lightGray};
-    border-radius: 18px;
+    background: none;
 
     color: ${colors.text.primary};
 
@@ -187,14 +195,11 @@ const SearchTextBox = styled.input`
 `
 
 const HistoryContainer = styled.div`
-    position: absolute;
-    top: calc(100% + 4px);
-    left: 0;
-    right: 0;
+    width: 100%;
     background-color: ${colors.palette.lightGray};
-    border-radius: 18px;
+    border-top: 1px solid ${colors.palette.gray};
+    border-radius: 0 0 18px 18px;
     overflow: hidden;
-    z-index: 1000;
 `
 
 const HistoryItem = styled.div`
@@ -205,6 +210,7 @@ const HistoryItem = styled.div`
     padding: 8px 1em 8px 2.5em;
     cursor: pointer;
     color: ${colors.text.primary};
+    border-radius: 0;
 
     &:hover {
         background-color: rgba(0, 0, 0, 0.05);
