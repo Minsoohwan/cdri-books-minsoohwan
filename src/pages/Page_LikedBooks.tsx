@@ -1,10 +1,11 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import PageCommon from "../common/layout/PageCommon"
 import SearchResultSection from "../common/components/SearchResultSection"
 import type { BookSearchResponse } from "../api/BookFetcher"
 import styled from "@emotion/styled"
 import { fonts } from "../theme/font"
 import { colors } from "../theme/colors"
+import { getLikedBooks, removeLikedBook } from "../api/mock/likedBooksApi"
 
 function Page_LikedBooks() {
     const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
@@ -12,13 +13,15 @@ function Page_LikedBooks() {
         BookSearchResponse["documents"]
     >([])
 
-    // TODO: Mock API에서 찜한 책 데이터 로드
-    // useEffect(() => {
-    //     // Mock API 호출
-    // }, [])
+    useEffect(() => {
+        getLikedBooks().then((data) => {
+            setLikedBooks(new Set(data.isbns))
+            setLikedBooksData(data.books)
+        })
+    }, [])
 
-    const onToggleLike = (isbn: string) => {
-        // TODO: Mock API를 통해 찜한 책 삭제
+    const onToggleLike = async (isbn: string) => {
+        await removeLikedBook(isbn)
         setLikedBooks((prev) => {
             const newSet = new Set(prev)
             if (newSet.has(isbn)) {

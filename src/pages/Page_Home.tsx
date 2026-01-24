@@ -12,10 +12,16 @@ import {
     FlexColumnContainer,
 } from "../common/style/FlexContainer"
 import closeIcon from "../assets/icon/close.svg"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import useDebounce from "../common/hooks/useDebounce"
 import { useBookSearchInfinite } from "../api/BookFetcher"
 import SearchResultSection from "../common/components/SearchResultSection"
+import {
+    getLikedBooks,
+    addLikedBook,
+    removeLikedBook,
+} from "../api/mock/likedBooksApi"
+import { addSearchHistory } from "../api/mock/searchHistoryApi"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
@@ -52,6 +58,32 @@ function Page_Home() {
     const allBooks = searchResult?.pages.flatMap((page) => page.documents) ?? []
     const totalCount = searchResult?.pages[0]?.meta.total_count ?? 0
 
+    useEffect(() => {
+        getLikedBooks().then((data) => {
+            setLikedBooks(new Set(data.isbns))
+        })
+    }, [])
+
+    useEffect(() => {
+        if (
+            searchQuery &&
+            searchResult &&
+            searchResult.pages.length > 0 &&
+            !isFetchingNextPage
+        ) {
+            const currentPage =
+                searchResult.pages[searchResult.pages.length - 1]
+            if (currentPage && currentPage.documents.length > 0) {
+                addSearchHistory(
+                    searchQuery,
+                    searchTarget,
+                    currentPage.documents,
+                    currentPage.meta.total_count
+                )
+            }
+        }
+    }, [searchQuery, searchTarget, searchResult, isFetchingNextPage])
+
     return (
         <PageCommon>
             <SearchWrapper>
@@ -82,16 +114,25 @@ function Page_Home() {
                 searchQuery={searchQuery}
                 allBooks={allBooks}
                 likedBooks={likedBooks}
-                onToggleLike={(isbn) => {
-                    setLikedBooks((prev) => {
-                        const newSet = new Set(prev)
-                        if (newSet.has(isbn)) {
-                            newSet.delete(isbn)
+                onToggleLike={async (isbn) => {
+                    const book = allBooks.find((b) => b.isbn === isbn)
+                    if (book) {
+                        const isCurrentlyLiked = likedBooks.has(isbn)
+                        if (isCurrentlyLiked) {
+                            await removeLikedBook(isbn)
                         } else {
-                            newSet.add(isbn)
+                            await addLikedBook(book)
                         }
-                        return newSet
-                    })
+                        setLikedBooks((prev) => {
+                            const newSet = new Set(prev)
+                            if (isCurrentlyLiked) {
+                                newSet.delete(isbn)
+                            } else {
+                                newSet.add(isbn)
+                            }
+                            return newSet
+                        })
+                    }
                 }}
                 hasNextPage={hasNextPage}
                 isFetchingNextPage={isFetchingNextPage}
