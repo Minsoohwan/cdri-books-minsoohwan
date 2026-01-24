@@ -46,8 +46,6 @@ npm run build
 npm run preview
 ```
 
-개발 서버는 기본적으로 `http://localhost:5173`에서 실행됩니다.
-
 ## 폴더 구조 및 주요 코드 설명
 
 ```
