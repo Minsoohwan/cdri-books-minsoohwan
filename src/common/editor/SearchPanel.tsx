@@ -64,10 +64,7 @@ function SearchPanel({
     const showHistory = isFocused && historyItems.length > 0
 
     return (
-        <Panel
-            gap={typeof gap === "number" ? gap : gap || 16}
-            alignItems="flex-end"
-        >
+        <Panel gap={typeof gap === "number" ? gap : gap || 16}>
             <SearchWrapper
                 ref={wrapperRef}
                 onClick={() => {
@@ -195,11 +192,15 @@ const SearchTextBox = styled.input`
 `
 
 const HistoryContainer = styled.div`
+    position: absolute;
+    top: 100%;
+    left: 0;
     width: 100%;
     background-color: ${colors.palette.lightGray};
     border-top: 1px solid ${colors.palette.gray};
     border-radius: 0 0 18px 18px;
     overflow: hidden;
+    z-index: 1000;
 `
 
 const HistoryItem = styled.div`

@@ -34,7 +34,7 @@ function PageCommon({ children }: PageCommonProps) {
                     onItemClick={onMenuClick}
                 />
             </Header>
-            {children}
+            <ContentWrapper>{children}</ContentWrapper>
         </PageContainer>
     )
 }
@@ -56,4 +56,13 @@ const Header = styled(FlexRowContainer)`
 const Logo = styled.div`
     ${fonts.title1}
     color: ${colors.text.primary};
+`
+
+const ContentWrapper = styled.div`
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
 `
