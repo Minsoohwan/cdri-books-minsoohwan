@@ -1,37 +1,20 @@
-import { useState, useEffect } from "react"
 import PageCommon from "../common/layout/PageCommon"
 import SearchResultSection from "../common/components/SearchResultSection"
-import type { BookSearchResponse } from "../api/BookFetcher"
 import styled from "@emotion/styled"
 import { fonts } from "../theme/font"
 import { colors } from "../theme/colors"
-import { getLikedBooks, removeLikedBook } from "../api/mock/likedBooksApi"
+import {
+    useLikedBooks,
+    useRemoveLikedBook,
+} from "../api/mock/likedBooksFetcher"
 
 function Page_LikedBooks() {
-    const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
-    const [likedBooksData, setLikedBooksData] = useState<
-        BookSearchResponse["documents"]
-    >([])
-
-    useEffect(() => {
-        getLikedBooks().then((data) => {
-            setLikedBooks(new Set(data.isbns))
-            setLikedBooksData(data.books)
-        })
-    }, [])
+    const { data: likedBooksData } = useLikedBooks()
+    const likedBooks = new Set(likedBooksData?.isbns ?? [])
+    const removeLikedBookMutation = useRemoveLikedBook()
 
     const onToggleLike = async (isbn: string) => {
-        await removeLikedBook(isbn)
-        setLikedBooks((prev) => {
-            const newSet = new Set(prev)
-            if (newSet.has(isbn)) {
-                newSet.delete(isbn)
-                setLikedBooksData((prevData) =>
-                    prevData.filter((book) => book.isbn !== isbn)
-                )
-            }
-            return newSet
-        })
+        await removeLikedBookMutation.mutateAsync(isbn)
     }
 
     return (
@@ -39,8 +22,8 @@ function Page_LikedBooks() {
             <Title>내가 찜한 책</Title>
             <SearchResultSection
                 type="like"
-                totalCount={likedBooksData.length}
-                allBooks={likedBooksData}
+                totalCount={likedBooksData?.books.length ?? 0}
+                allBooks={likedBooksData?.books ?? []}
                 likedBooks={likedBooks}
                 onToggleLike={onToggleLike}
             />

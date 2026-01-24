@@ -1,4 +1,5 @@
 import axios from "axios"
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 
 const JSON_FILE_PATH = "/mock/searchHistory.json"
 const API_BASE_URL = "/api/mock"
@@ -11,6 +12,8 @@ export interface SearchHistoryItem {
 export interface SearchHistoryData {
     items: SearchHistoryItem[]
 }
+
+const SEARCH_HISTORY_QUERY_KEY = ["searchHistory"]
 
 /**
  * 검색 리스트 조회
@@ -56,4 +59,20 @@ export async function removeSearchHistory(timestamp: number): Promise<void> {
     data.items = data.items.filter((item) => item.timestamp !== timestamp)
 
     await axios.put(`${API_BASE_URL}/searchHistory`, data)
+}
+
+export function useSearchHistory() {
+    return useQuery<SearchHistoryData>({
+        queryKey: SEARCH_HISTORY_QUERY_KEY,
+        queryFn: getSearchHistory,
+    })
+}
+
+export function useInvalidateSearchHistory() {
+    const queryClient = useQueryClient()
+    return () => {
+        queryClient.invalidateQueries({
+            queryKey: SEARCH_HISTORY_QUERY_KEY,
+        })
+    }
 }

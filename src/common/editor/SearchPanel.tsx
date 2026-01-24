@@ -2,8 +2,16 @@ import styled from "@emotion/styled"
 import { colors } from "../../theme/colors"
 import { fonts } from "../../theme/font"
 import searchIcon from "../../assets/icon/search.svg"
+import closeIcon from "../../assets/icon/close.svg"
 import Button, { type ButtonProps } from "./Button"
 import { FlexRowContainer } from "../style/FlexContainer"
+import { useState, useRef } from "react"
+import {
+    useSearchHistory,
+    removeSearchHistory,
+    useInvalidateSearchHistory,
+    type SearchHistoryItem,
+} from "../../api/mock/searchHistoryFetcher"
 
 interface ButtonConfig extends ButtonProps {
     text: string
@@ -14,6 +22,7 @@ interface SearchPanelProps {
     value?: string
     placeholder?: string
     onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+    onHistoryClick?: (query: string) => void
     buttonConfig?: ButtonConfig
     gap?: string | number
     buttonId?: string
@@ -23,22 +32,95 @@ function SearchPanel({
     value,
     placeholder = "검색어를 입력하세요",
     onChange,
+    onHistoryClick,
     buttonConfig,
     gap = "16px",
     buttonId,
 }: SearchPanelProps) {
+    const [isFocused, setIsFocused] = useState(false)
+    const wrapperRef = useRef<HTMLDivElement>(null)
+    const { data: searchHistoryData } = useSearchHistory()
+    const historyItems = searchHistoryData?.items ?? []
+    const invalidateSearchHistory = useInvalidateSearchHistory()
+
+    const onHIstoryClick = (item: SearchHistoryItem) => {
+        if (onHistoryClick) {
+            onHistoryClick(item.query)
+        } else {
+            const syntheticEvent = {
+                target: { value: item.query },
+            } as React.ChangeEvent<HTMLInputElement>
+            onChange(syntheticEvent)
+        }
+        setIsFocused(false)
+    }
+
+    const onRemoveHistory = async (e: React.MouseEvent, timestamp: number) => {
+        e.stopPropagation()
+        await removeSearchHistory(timestamp)
+        invalidateSearchHistory()
+    }
+
+    const showHistory = isFocused && historyItems.length > 0
+
     return (
         <Panel
             gap={typeof gap === "number" ? gap : gap || 16}
             alignItems="flex-end"
         >
-            <SearchWrapper>
+            <SearchWrapper
+                ref={wrapperRef}
+                onClick={() => {
+                    if (!isFocused) {
+                        setIsFocused(true)
+                    }
+                }}
+            >
                 <SearchIcon src={searchIcon} alt="" />
                 <SearchTextBox
                     placeholder={placeholder}
                     value={value}
                     onChange={onChange}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => {
+                        // Delay to allow clicking on history items
+                        setTimeout(() => {
+                            if (
+                                !wrapperRef.current?.contains(
+                                    document.activeElement
+                                )
+                            ) {
+                                setIsFocused(false)
+                            }
+                        }, 200)
+                    }}
                 />
+                {showHistory && (
+                    <HistoryContainer>
+                        {historyItems.map((item) => (
+                            <HistoryItem
+                                key={item.timestamp}
+                                onMouseDown={(e) => {
+                                    e.preventDefault()
+                                    onHIstoryClick(item)
+                                }}
+                            >
+                                <HistoryText>{item.query}</HistoryText>
+                                <RemoveButton
+                                    onMouseDown={(e) => {
+                                        e.preventDefault()
+                                        e.stopPropagation()
+                                    }}
+                                    onClick={(e) =>
+                                        onRemoveHistory(e, item.timestamp)
+                                    }
+                                >
+                                    <RemoveIcon src={closeIcon} alt="remove" />
+                                </RemoveButton>
+                            </HistoryItem>
+                        ))}
+                    </HistoryContainer>
+                )}
             </SearchWrapper>
             {buttonConfig && (
                 <Button
@@ -91,7 +173,7 @@ const SearchTextBox = styled.input`
     border: none;
 
     background-color: ${colors.palette.lightGray};
-    border-radius: 9999px;
+    border-radius: 18px;
 
     color: ${colors.text.primary};
 
@@ -102,4 +184,53 @@ const SearchTextBox = styled.input`
     &::placeholder {
         color: ${colors.text.subtitle};
     }
+`
+
+const HistoryContainer = styled.div`
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background-color: ${colors.palette.lightGray};
+    border-radius: 18px;
+    overflow: hidden;
+    z-index: 1000;
+`
+
+const HistoryItem = styled.div`
+    ${fonts.caption}
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 1em 8px 2.5em;
+    cursor: pointer;
+    color: ${colors.text.primary};
+
+    &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+    }
+`
+
+const HistoryText = styled.span`
+    flex: 1;
+`
+
+const RemoveButton = styled.button`
+    padding: 4px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 8px;
+
+    &:hover {
+        opacity: 0.7;
+    }
+`
+
+const RemoveIcon = styled.img`
+    width: 12px;
+    height: 12px;
 `

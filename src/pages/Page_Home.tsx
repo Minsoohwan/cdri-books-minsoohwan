@@ -17,11 +17,14 @@ import useDebounce from "../common/hooks/useDebounce"
 import { useBookSearchInfinite } from "../api/BookFetcher"
 import SearchResultSection from "../common/components/SearchResultSection"
 import {
-    getLikedBooks,
-    addLikedBook,
-    removeLikedBook,
-} from "../api/mock/likedBooksApi"
-import { addSearchHistory } from "../api/mock/searchHistoryApi"
+    useLikedBooks,
+    useAddLikedBook,
+    useRemoveLikedBook,
+} from "../api/mock/likedBooksFetcher"
+import {
+    addSearchHistory,
+    useInvalidateSearchHistory,
+} from "../api/mock/searchHistoryFetcher"
 
 const DETAIL_SEARCH_BUTTON_ID = "detail-search-button"
 
@@ -31,7 +34,12 @@ function Page_Home() {
     const [detailSearchTarget, setDetailSearchTarget] = useState("title")
     const [detailSearchQuery, setDetailSearchQuery] = useState("")
     const [isDetailSearchMode, setIsDetailSearchMode] = useState(false)
-    const [likedBooks, setLikedBooks] = useState<Set<string>>(new Set())
+    
+    const { data: likedBooksData } = useLikedBooks()
+    const likedBooks = new Set(likedBooksData?.isbns ?? [])
+    const addLikedBookMutation = useAddLikedBook()
+    const removeLikedBookMutation = useRemoveLikedBook()
+    const invalidateSearchHistory = useInvalidateSearchHistory()
 
     const debouncedSearchValue = useDebounce(searchValue, 300)
     const debouncedDetailSearchQuery = useDebounce(detailSearchQuery, 300)
@@ -59,12 +67,6 @@ function Page_Home() {
     const totalCount = searchResult?.pages[0]?.meta.total_count ?? 0
 
     useEffect(() => {
-        getLikedBooks().then((data) => {
-            setLikedBooks(new Set(data.isbns))
-        })
-    }, [])
-
-    useEffect(() => {
         if (
             searchQuery &&
             searchResult &&
@@ -74,10 +76,12 @@ function Page_Home() {
             const currentPage =
                 searchResult.pages[searchResult.pages.length - 1]
             if (currentPage && currentPage.documents.length > 0) {
-                addSearchHistory(searchQuery)
+                addSearchHistory(searchQuery).then(() => {
+                    invalidateSearchHistory()
+                })
             }
         }
-    }, [searchQuery, searchResult, isFetchingNextPage])
+    }, [searchQuery, searchResult, isFetchingNextPage, invalidateSearchHistory])
 
     return (
         <PageCommon>
@@ -88,6 +92,11 @@ function Page_Home() {
                         value={searchValue}
                         onChange={(e) => {
                             setSearchValue(e.target.value)
+                            setIsDetailSearchMode(false)
+                            setDetailSearchQuery("")
+                        }}
+                        onHistoryClick={(query) => {
+                            setSearchValue(query)
                             setIsDetailSearchMode(false)
                             setDetailSearchQuery("")
                         }}
@@ -114,19 +123,10 @@ function Page_Home() {
                     if (book) {
                         const isCurrentlyLiked = likedBooks.has(isbn)
                         if (isCurrentlyLiked) {
-                            await removeLikedBook(isbn)
+                            await removeLikedBookMutation.mutateAsync(isbn)
                         } else {
-                            await addLikedBook(book)
+                            await addLikedBookMutation.mutateAsync(book)
                         }
-                        setLikedBooks((prev) => {
-                            const newSet = new Set(prev)
-                            if (isCurrentlyLiked) {
-                                newSet.delete(isbn)
-                            } else {
-                                newSet.add(isbn)
-                            }
-                            return newSet
-                        })
                     }
                 }}
                 hasNextPage={hasNextPage}

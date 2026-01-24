@@ -1,7 +1,8 @@
 import axios from "axios"
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import type { BookSearchResponse } from "../BookFetcher"
 
-type BookData = BookSearchResponse["documents"][number]
+export type BookData = BookSearchResponse["documents"][number]
 
 const JSON_FILE_PATH = "/mock/liked.json"
 const API_BASE_URL = "/api/mock"
@@ -10,6 +11,8 @@ export interface LikedBooksData {
     isbns: string[]
     books: BookData[]
 }
+
+const LIKED_BOOKS_QUERY_KEY = ["likedBooks"]
 
 /**
  * 찜한 도서 목록 조회
@@ -48,4 +51,35 @@ export async function removeLikedBook(isbn: string): Promise<void> {
     data.books = data.books.filter((book) => book.isbn !== isbn)
 
     await axios.put(`${API_BASE_URL}/liked`, data)
+}
+
+export function useLikedBooks() {
+    return useQuery<LikedBooksData>({
+        queryKey: LIKED_BOOKS_QUERY_KEY,
+        queryFn: getLikedBooks,
+    })
+}
+
+export function useAddLikedBook() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (book: BookData) => addLikedBook(book),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: LIKED_BOOKS_QUERY_KEY,
+            })
+        },
+    })
+}
+
+export function useRemoveLikedBook() {
+    const queryClient = useQueryClient()
+    return useMutation({
+        mutationFn: (isbn: string) => removeLikedBook(isbn),
+        onSuccess: () => {
+            queryClient.invalidateQueries({
+                queryKey: LIKED_BOOKS_QUERY_KEY,
+            })
+        },
+    })
 }
